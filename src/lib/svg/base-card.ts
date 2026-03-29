@@ -1,5 +1,6 @@
 import { CardColors } from "@/lib/themes";
 import { parseGradient, renderGradientDef } from "@/utils/colors";
+import { encodeHTML } from "@/utils/format";
 import { getAnimationStyle } from "./animations";
 
 export interface BaseCardOptions {
@@ -30,7 +31,7 @@ export function renderBaseCard(
     disableAnimations = false,
   } = options;
 
-  const displayTitle = customTitle ?? title ?? "";
+  const displayTitle = encodeHTML(customTitle ?? title ?? "");
   const titleHeight = hideTitle ? 0 : 45;
   const gradient = parseGradient(colors.bgColor.replace("#", ""));
   const hasGradient = gradient !== null;
