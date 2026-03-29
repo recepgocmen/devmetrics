@@ -1,0 +1,205 @@
+---
+description: React & Next.js best practices — component architecture, hooks, constants, types, and accessibility
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React Best Practices Agent
+
+You are an expert frontend developer. Every component you write or refactor must follow these principles. When modifying `.tsx` files, apply ALL of these rules systematically.
+
+## 1. File & Component Structure
+
+- **One component per file.** If a file has more than one exported/internal component, extract each into its own file under a logical folder (e.g. `components/cards/CardResult.tsx`).
+- **Max ~150 lines per component file.** If a component exceeds this, break it down.
+- **Folder convention:**
+
+```
+src/
+  components/
+    ui/            # Reusable primitives (Button, Input, Select, Badge)
+    icons/         # SVG icon components
+    cards/         # Domain-specific card components
+    layout/        # Header, Footer, Section wrappers
+  hooks/           # Custom hooks (useClipboard, useMounted, etc.)
+  constants/       # App-wide constants (themes, URLs, config)
+  types/           # Shared TypeScript interfaces & types
+```
+
+## 2. Constants — Always Separate
+
+Never define constants (arrays, config objects, URLs, magic strings) inside component files.
+
+```typescript
+// ❌ BAD — inside page.tsx
+const PROD_DOMAIN = "https://devmetricsforgithub.vercel.app";
+const THEMES = ["default", "dark", "radical", ...];
+
+// ✅ GOOD — src/constants/index.ts
+export const PROD_DOMAIN = "https://devmetricsforgithub.vercel.app";
+export const THEMES = ["default", "dark", "radical", ...] as const;
+export type Theme = (typeof THEMES)[number];
+```
+
+Apply the same rule for layout options, navigation links, feature lists, step data, and any static config.
+
+## 3. TypeScript Types — Named & Exported
+
+Never use inline object types for props. Define named interfaces, export them, and colocate or centralize.
+
+```typescript
+// ❌ BAD
+function CardResult({ title, previewSrc }: { title: string; previewSrc: string }) { ... }
+
+// ✅ GOOD
+interface CardResultProps {
+  title: string;
+  previewSrc: string;
+  markdown: string;
+  copied: string | null;
+  onCopy: (text: string, id: string) => void;
+  id: string;
+}
+
+export function CardResult({ title, previewSrc, markdown, copied, onCopy, id }: CardResultProps) { ... }
+```
+
+## 4. Custom Hooks — Extract Reusable Logic
+
+Any stateful logic used across components or any logic that makes a component harder to read should be a custom hook.
+
+```typescript
+// ✅ src/hooks/useClipboard.ts
+export function useClipboard(resetMs = 2000) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copy = useCallback((text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), resetMs);
+  }, [resetMs]);
+
+  return { copiedId, copy };
+}
+
+// ✅ src/hooks/useMounted.ts
+export function useMounted(delayMs = 100) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), delayMs);
+    return () => clearTimeout(timer);
+  }, [delayMs]);
+  return mounted;
+}
+```
+
+## 5. Memoization — Use When Appropriate
+
+- Wrap expensive computations with `useMemo`.
+- Wrap callback functions passed as props with `useCallback`.
+- Use `React.memo()` for components that receive the same props frequently.
+
+```typescript
+// ✅ Memoize derived values
+const statsUrl = useMemo(
+  () => `${PROD_DOMAIN}/api/stats?${buildParams()}`,
+  [username, theme, showIcons, hideBorder]
+);
+
+// ✅ Memoize callbacks
+const handleGenerate = useCallback(() => {
+  if (!username.trim()) return;
+  setGenerated(true);
+  setGenKey((k) => k + 1);
+}, [username]);
+```
+
+## 6. SVG Icons — Component-ize
+
+Never inline raw SVG markup in JSX. Create icon components.
+
+```typescript
+// ✅ src/components/icons/GithubIcon.tsx
+export function GithubIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor">
+      <path fillRule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 ..." />
+    </svg>
+  );
+}
+```
+
+## 7. Reusable UI Primitives — DRY
+
+When a pattern (button style, card wrapper, code block) repeats 3+ times, extract it.
+
+```typescript
+// ✅ src/components/ui/CopyButton.tsx
+interface CopyButtonProps {
+  copied: boolean;
+  onClick: () => void;
+  label?: string;
+}
+
+export function CopyButton({ copied, onClick, label = "Copy" }: CopyButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 text-xs font-medium rounded-lg transition-colors",
+        copied
+          ? "bg-green-600 text-white"
+          : "bg-[#21262d] text-[#8b949e] hover:bg-[#30363d]"
+      )}
+    >
+      {copied ? "Copied!" : label}
+    </button>
+  );
+}
+```
+
+## 8. Tailwind — Design Tokens over Magic Strings
+
+Extend `tailwind.config.ts` with semantic color tokens instead of repeating hex codes.
+
+```typescript
+// tailwind.config.ts
+theme: {
+  extend: {
+    colors: {
+      surface: { DEFAULT: "#161b22", dark: "#0d1117" },
+      border: { DEFAULT: "#21262d", light: "#30363d" },
+      muted: "#8b949e",
+    },
+  },
+}
+```
+
+Then use: `bg-surface`, `border-border`, `text-muted` instead of raw hex values.
+
+## 9. Accessibility
+
+- Every interactive element needs an accessible name (`aria-label`, visible text, or `title`).
+- Use semantic HTML: `<nav>`, `<main>`, `<section>`, `<article>`, `<aside>`.
+- Images must have meaningful `alt` text.
+- Keyboard navigation must work (focusable elements, `onKeyDown` for custom controls).
+- Color contrast must meet WCAG AA (4.5:1 for text).
+
+## 10. Error & Loading States
+
+- Wrap sections with error boundaries.
+- Show skeleton/placeholder for async content (images, API data).
+- Handle clipboard API failures gracefully.
+
+## Checklist Before Merging Any `.tsx` File
+
+- [ ] No component file exceeds ~150 lines
+- [ ] Constants are in `src/constants/`
+- [ ] Types/interfaces are named and exported
+- [ ] Reusable logic lives in custom hooks under `src/hooks/`
+- [ ] No inline SVG — all icons are components
+- [ ] No repeated UI patterns — extracted to `src/components/ui/`
+- [ ] `useMemo` / `useCallback` used for expensive or passed-down values
+- [ ] Tailwind uses design tokens, not raw hex
+- [ ] All interactive elements are accessible
+- [ ] Loading and error states exist for async content

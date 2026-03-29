@@ -1,0 +1,82 @@
+---
+description: DevMetrics page.tsx refactoring roadmap — specific extraction targets
+globs: src/app/page.tsx
+alwaysApply: false
+---
+
+# DevMetrics page.tsx Refactoring Guide
+
+This file documents exactly what needs to be extracted from the monolithic `page.tsx` (959 lines) into a clean component architecture.
+
+## Target File Structure
+
+```
+src/
+  constants/
+    themes.ts          # THEMES array + Theme type
+    urls.ts            # PROD_DOMAIN + URL builder helpers
+    navigation.ts      # Nav links, step data, feature data
+  types/
+    cards.ts           # CardResultProps, SnippetRowProps, etc.
+  hooks/
+    useClipboard.ts    # clipboard copy + copied state
+    useMounted.ts      # delayed mount flag for hydration
+    useCardGenerator.ts # username, theme, options state + URL builders
+  components/
+    icons/
+      GithubIcon.tsx
+      CopyIcon.tsx
+      CheckIcon.tsx
+      ChevronUpIcon.tsx
+      ChartIcon.tsx
+      CodeIcon.tsx
+      PinIcon.tsx
+    ui/
+      CopyButton.tsx       # Reusable copy-with-feedback button
+      CodeBlock.tsx         # Styled <pre> block for markdown snippets
+      ThemeSelect.tsx       # Theme dropdown
+      LayoutSelect.tsx      # Layout dropdown
+      ToggleCheckbox.tsx    # Labeled checkbox toggle
+    cards/
+      CardResult.tsx        # Stats/langs preview card
+      RepoPinCard.tsx       # Repo pin card with instructions
+      SideBySideCard.tsx    # Side-by-side layout card
+    layout/
+      Header.tsx
+      Footer.tsx
+      HeroSection.tsx
+      ResultsSection.tsx
+      CustomizeBar.tsx
+    sections/
+      HowItWorks.tsx       # StepBox grid
+      Features.tsx          # FeatureBox grid
+      ThemeGallery.tsx      # Theme grid with previews
+      Documentation.tsx     # DocSection + DocParam + QuickStartBlock
+    StickyBar.tsx            # Bottom sticky copy bar
+  app/
+    page.tsx               # Thin orchestrator (~50-80 lines max)
+```
+
+## Extraction Priority
+
+1. **Constants** → `src/constants/` (quick win, zero risk)
+2. **Types** → `src/types/cards.ts` (enables better DX)
+3. **Hooks** → `src/hooks/` (useClipboard, useMounted, useCardGenerator)
+4. **Icons** → `src/components/icons/` (7 inline SVGs to extract)
+5. **UI primitives** → `src/components/ui/` (CopyButton used 5+ times)
+6. **Section components** → `src/components/sections/`
+7. **Layout** → `src/components/layout/`
+
+## Key Patterns to Eliminate
+
+### Repeated Copy Button (5+ instances)
+Extract into `<CopyButton copied={copied === id} onClick={() => onCopy(text, id)} />`.
+
+### Repeated Code Block (4+ instances)
+Extract into `<CodeBlock>{content}</CodeBlock>` with consistent styling.
+
+### URL Building Logic
+Move `buildParams()` and all URL derivations into `useCardGenerator` hook or a pure utility.
+
+### Inline SVG Paths
+The `FeatureBox` component has an `iconMap` record — replace with proper icon components.
