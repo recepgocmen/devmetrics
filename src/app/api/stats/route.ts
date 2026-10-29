@@ -2,19 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchStats } from "@/lib/fetchers/stats";
 import { renderStatsCard } from "@/lib/cards/stats-card";
 import { parseBoolean, parseArray } from "@/utils/format";
+import { renderErrorCard } from "@/lib/svg/error-card";
 
 const DEFAULT_CACHE_SECONDS = 14400; // 4 hours
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
-  const username = params.get("username");
+  const username = params.get("username")?.trim();
   if (!username) {
     return new NextResponse(
-      renderErrorCard("Missing required parameter: username"),
+      renderErrorCard("Missing required parameter: username", 495),
       {
         status: 400,
-        headers: { "Content-Type": "image/svg+xml; charset=utf-8" },
+        headers: {
+          "Content-Type": "image/svg+xml; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
       },
     );
   }
@@ -59,19 +63,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return new NextResponse(renderErrorCard(message), {
+    return new NextResponse(renderErrorCard(message, 495), {
       status: 500,
-      headers: { "Content-Type": "image/svg+xml; charset=utf-8" },
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
     });
   }
-}
-
-function renderErrorCard(message: string): string {
-  return `
-<svg width="495" height="120" viewBox="0 0 495 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <style>* { font-family: 'Segoe UI', Ubuntu, 'Helvetica Neue', Sans-Serif; }</style>
-  <rect x="0.5" y="0.5" rx="4.5" width="494" height="119" fill="#141321" stroke="#e4544e" />
-  <text x="25" y="45" fill="#e4544e" font-size="16" font-weight="600">Something went wrong!</text>
-  <text x="25" y="75" fill="#a9a9a9" font-size="13">${message.slice(0, 80)}</text>
-</svg>`.trim();
 }

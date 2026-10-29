@@ -2,13 +2,17 @@ import { graphqlQuery } from "@/lib/github/client";
 import { STATS_QUERY } from "@/lib/github/queries";
 import { StatsGraphQLData, GitHubUserStats } from "@/lib/github/types";
 
+const MAX_REPO_PAGES = 5; // Cap at 500 top-starred repos to prevent serverless timeouts
+
 export async function fetchStats(username: string): Promise<GitHubUserStats> {
   let totalStars = 0;
   let hasNextPage = true;
   let cursor: string | null = null;
   let userData: StatsGraphQLData["user"] | null = null;
+  let pageCount = 0;
 
-  while (hasNextPage) {
+  while (hasNextPage && pageCount < MAX_REPO_PAGES) {
+    pageCount++;
     const data: StatsGraphQLData = await graphqlQuery<StatsGraphQLData>(STATS_QUERY, {
       login: username,
       after: cursor,

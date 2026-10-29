@@ -3,6 +3,7 @@ import { resolveCardColors } from "@/lib/themes";
 import { renderBaseCard } from "@/lib/svg/base-card";
 import { getTopNLanguages, calculateLangPercentages } from "@/lib/fetchers/top-langs";
 import { getStaggerDelay } from "@/lib/svg/animations";
+import { encodeHTML } from "@/utils/format";
 
 export type LangsLayout = "normal" | "compact" | "donut" | "pie";
 
@@ -34,7 +35,7 @@ function renderNormalLayout(
       <g transform="translate(25, ${y})">
         <g class="dm-stagger" style="${delay}">
           <text x="2" y="15" fill="${textColor}" font-size="14" font-weight="600">
-            ${lang.name}
+            ${encodeHTML(lang.name)}
           </text>
           <rect x="0" y="24" width="300" height="8" rx="4" fill="${textColor}" opacity="0.15" />
           <rect x="0" y="24" width="${(lang.percentage / 100) * 300}" height="8" rx="4" fill="${lang.color}" />
@@ -86,7 +87,7 @@ function renderCompactLayout(
       <g transform="translate(${x}, ${y})">
         <circle cx="5" cy="6" r="5" fill="${lang.color}" />
         <text x="15" y="10" fill="${textColor}" font-size="11">
-          ${lang.name} ${lang.percentage}%
+          ${encodeHTML(lang.name)} ${lang.percentage}%
         </text>
       </g>`);
   });
@@ -127,7 +128,7 @@ function renderDonutLayout(
       <g transform="translate(210, ${y})">
         <circle cx="5" cy="6" r="5" fill="${lang.color}" />
         <text x="15" y="10" fill="${textColor}" font-size="12">
-          ${lang.name} — ${lang.percentage}%
+          ${encodeHTML(lang.name)} — ${lang.percentage}%
         </text>
       </g>`;
   });
@@ -172,7 +173,7 @@ function renderPieLayout(
       <g transform="translate(210, ${y})">
         <circle cx="5" cy="6" r="5" fill="${lang.color}" />
         <text x="15" y="10" fill="${textColor}" font-size="12">
-          ${lang.name} — ${lang.percentage}%
+          ${encodeHTML(lang.name)} — ${lang.percentage}%
         </text>
       </g>`;
   });

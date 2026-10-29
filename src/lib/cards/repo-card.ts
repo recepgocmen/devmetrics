@@ -43,7 +43,7 @@ export function renderRepoCard(
 
   const langDot = repo.primaryLanguage
     ? `<circle cx="0" cy="-4" r="6" fill="${repo.primaryLanguage.color}" />
-       <text x="15" y="0" fill="${colors.textColor}" font-size="12">${repo.primaryLanguage.name}</text>`
+       <text x="15" y="0" fill="${colors.textColor}" font-size="12">${encodeHTML(repo.primaryLanguage.name)}</text>`
     : "";
   const langWidth = repo.primaryLanguage
     ? 15 + repo.primaryLanguage.name.length * 7.5
